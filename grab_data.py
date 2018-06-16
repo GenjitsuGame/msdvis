@@ -9,7 +9,7 @@ import hdf5_getters
 
 
 def get_song_data(categories, path="./MillionSongSubset/data", write=False,
-                  write_path="./temp/song_data.csv", start_i=0, end_i=10000):
+                  write_path="./temp/song_data.csv", limit=None):
     """ Pulls data from all h5 files on the provided path and all it's child nodes
 
     Parameters
@@ -38,7 +38,10 @@ def get_song_data(categories, path="./MillionSongSubset/data", write=False,
         for f in files:
             file_paths.append(os.path.join(root, f))
 
-    for file_path in file_paths[start_i:end_i]:
+    if limit is None:
+         limit = len(file_paths)
+
+    for file_path in file_paths[:limit]:
         h5file = hdf5_getters.open_h5_file_read(file_path)
         datapoint = {}
         for cat in categories:
@@ -46,7 +49,7 @@ def get_song_data(categories, path="./MillionSongSubset/data", write=False,
         h5file.close()
         data.append(datapoint)
 
-        progress = (count*100.)/10000  # 10 000 datapoints in sample
+        progress = (count*100.)/limit
         sys.stdout.write("==== Compiling subset of data...[ {:.2f}% ] ==== \r".format(progress))
         sys.stdout.flush()
         count += 1
@@ -107,7 +110,9 @@ def get_meta_data(files=None, path="./MillionSongSubset/AdditionalFiles",
 
 
 if __name__ == "__main__":
+    path = './temp/song_data_subset.csv'
+    limit = 10000
     print("...running grab_data.py")
     CPU_COUNT = multiprocessing.cpu_count()
     p = multiprocessing.Pool(processes=CPU_COUNT)
-    p.apply_async(get_song_data(["year"], write=True))
+    p.apply_async(get_song_data(["track_id", "song_id", "title", "artist_name", "artist_id", "song_hotttnesss", "audio_md5", "similar_artists"], write=True, write_path=path, limit=limit))
